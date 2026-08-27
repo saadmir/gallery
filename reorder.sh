@@ -2,24 +2,14 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # K2 Gallery — Reorder Script
 #
-# Reorders js/photos.js according to the filenames listed in order.txt.
-# Files not listed in order.txt are appended at the end (so you don't lose
-# anything if you only list the ones you care about).
+# Reorders js/photos.js according to:
+#   1. order.txt  — pinned items placed at the beginning of the gallery
+#   2. Chronological / unlisted items in the middle
+#   3. bottom.txt — pinned items placed at the end of the gallery
 #
 # Usage:
-#   1. Create order.txt in this directory — one filename per line, e.g.:
-#
-#        IMG_5620.jpg
-#        IMG_5625.jpg
-#        IMG_5538.MOV
-#        IMG_5682.MOV
-#        ...
-#
-#      Use the base filename only (no path).
-#      Lines starting with # are treated as comments and ignored.
-#      Blank lines are ignored.
-#
-#   2. chmod +x reorder.sh   (first time only)
+#   1. Edit order.txt to pin items to the top (one filename per line)
+#   2. Edit bottom.txt to pin items to the bottom (one filename per line)
 #   3. ./reorder.sh
 #
 # The script is non-destructive: it backs up photos.js before overwriting.
@@ -29,6 +19,7 @@ set -euo pipefail
 
 PHOTOS_JS="js/photos.js"
 ORDER_FILE="order.txt"
+BOTTOM_FILE="bottom.txt"
 
 # ── Sanity checks ──────────────────────────────────────────────────────────
 if [ ! -f "$PHOTOS_JS" ]; then
@@ -38,129 +29,147 @@ fi
 
 if [ ! -f "$ORDER_FILE" ]; then
   echo ""
-  echo "  order.txt not found. Creating a sample one from the current order..."
-  echo ""
-  # Extract just the base filenames from current photos.js as a starter template
-  grep '"src":' "$PHOTOS_JS" | \
-    sed 's|.*display/||' | \
-    sed 's|".*||' | \
-    sed 's|^|# |' > "$ORDER_FILE"   # prefix with # so it's all comments initially
-  # Append uncommented versions
-  grep '"src":' "$PHOTOS_JS" | \
-    sed 's|.*display/||' | \
-    sed 's|".*||' >> "$ORDER_FILE"
-  echo "  Created order.txt with all ${$(wc -l < "$ORDER_FILE" | tr -d ' ')} files in current order."
-  echo "  Edit order.txt to set your preferred order, then re-run ./reorder.sh"
-  echo ""
-  exit 0
+  echo "  order.txt not found. Creating a starter template..."
+  echo "# Pinned pictures at the beginning of the gallery" > "$ORDER_FILE"
 fi
 
-# ── Parse photos.js into an associative map: filename → full js entry ───────
-declare -A entry_map
-
-current_entry=""
-current_file=""
-
-while IFS= read -r line; do
-  trimmed="${line#"${line%%[![:space:]]*}"}"   # ltrim whitespace
-
-  if [[ "$trimmed" == "{ id:"* ]]; then
-    current_entry="$line"
-    # Extract filename from src field:  "images/display/FILENAME"
-    current_file="$(echo "$line" | sed 's|.*display/||' | sed 's|".*||')"
-    entry_map["$current_file"]="$current_entry"
-  fi
-done < "$PHOTOS_JS"
-
-total_entries="${#entry_map[@]}"
-echo ""
-echo "  K2 Gallery Reorder"
-echo "  ─────────────────────────────────"
-echo "  Loaded $total_entries entries from $PHOTOS_JS"
-
-# ── Read desired order from order.txt ──────────────────────────────────────
-ordered_files=()
-while IFS= read -r line; do
-  # Strip leading/trailing whitespace
-  line="${line#"${line%%[![:space:]]*}"}"
-  line="${line%"${line##*[![:space:]]}"}"
-  # Skip blank lines and comments
-  [[ -z "$line" || "$line" == \#* ]] && continue
-  ordered_files+=("$line")
-done < "$ORDER_FILE"
-
-echo "  Found ${#ordered_files[@]} file(s) listed in $ORDER_FILE"
-
-# ── Build new ordered array ────────────────────────────────────────────────
-declare -A seen
-
-new_entries=()
-missing=()
-
-# First: entries in the order specified by order.txt
-for fname in "${ordered_files[@]}"; do
-  if [[ -v "entry_map[$fname]" ]]; then
-    new_entries+=("${entry_map[$fname]}")
-    seen["$fname"]=1
-  else
-    missing+=("$fname")
-  fi
-done
-
-# Then: any entries NOT listed in order.txt (appended at the end)
-unlisted=()
-for fname in "${!entry_map[@]}"; do
-  if [[ ! -v "seen[$fname]" ]]; then
-    unlisted+=("$fname")
-  fi
-done
-
-# Sort unlisted alphabetically for deterministic output
-IFS=$'\n' sorted_unlisted=($(sort <<<"${unlisted[*]}")); unset IFS
-
-for fname in "${sorted_unlisted[@]}"; do
-  new_entries+=("${entry_map[$fname]}")
-done
-
-# ── Report ─────────────────────────────────────────────────────────────────
-if [ "${#missing[@]}" -gt 0 ]; then
+if [ ! -f "$BOTTOM_FILE" ]; then
   echo ""
-  echo "  Warning: ${#missing[@]} filename(s) in order.txt not found in photos.js:"
-  for m in "${missing[@]}"; do echo "    - $m"; done
+  echo "  bottom.txt not found. Creating a starter template..."
+  echo "# Pinned pictures and videos at the end of the gallery" > "$BOTTOM_FILE"
 fi
 
-if [ "${#unlisted[@]}" -gt 0 ]; then
-  echo "  ${#unlisted[@]} unlisted file(s) appended at the end."
-fi
+# Run python reorder engine for cross-platform reliability
+python3 - << 'EOF'
+import os
+import re
+import shutil
+from datetime import datetime
 
-# ── Back up existing photos.js ─────────────────────────────────────────────
-backup="${PHOTOS_JS}.bak"
-cp "$PHOTOS_JS" "$backup"
+photos_file = "js/photos.js"
+order_file = "order.txt"
+bottom_file = "bottom.txt"
+backup_file = "js/photos.js.bak"
 
-# ── Write new photos.js ────────────────────────────────────────────────────
-{
-  echo "/**"
-  echo " * K2 Gallery -- Photo & Video Data"
-  echo " * Reordered by reorder.sh on $(date '+%Y-%m-%d %H:%M')"
-  echo " *"
-  echo " * Edit the  title  and  description  fields to add captions."
-  echo " * Re-running reorder.sh preserves your edits; running setup.sh will overwrite."
-  echo " */"
-  echo ""
-  echo "const PHOTOS = ["
+if not os.path.exists(photos_file):
+    print(f"Error: {photos_file} not found.")
+    exit(1)
 
-  new_id=1
-  for entry in "${new_entries[@]}"; do
-    # Replace the id field with the new sequential id
-    updated="$(echo "$entry" | sed "s/{ id: [0-9]*/{ id: $new_id/")"
-    echo "$updated,"
-    new_id=$((new_id + 1))
-  done
+with open(photos_file, "r") as f:
+    photos_content = f.read()
 
-  echo "];"
-} > "$PHOTOS_JS"
+entries = []
+for line in photos_content.splitlines():
+    line_s = line.strip()
+    if line_s.startswith("{ id:") or line_s.startswith("{id:"):
+        m = re.search(r'src:\s*"images/display/([^"]+)"', line)
+        if m:
+            fname = m.group(1)
+            line_clean = line.rstrip(", \t")
+            entries.append((fname, line_clean))
 
-echo ""
-echo "  Done! $PHOTOS_JS reordered (${#new_entries[@]} entries)."
-echo "  Backup saved to $backup"
-echo ""
+total_entries = len(entries)
+print("")
+print("  K2 Gallery Reorder")
+print("  ─────────────────────────────────")
+print(f"  Loaded {total_entries} entries from {photos_file}")
+
+def read_list_file(filepath):
+    lines = []
+    if os.path.exists(filepath):
+        with open(filepath, "r") as f:
+            for l in f:
+                l = l.strip()
+                if l and not l.startswith("#"):
+                    lines.append(l)
+    return lines
+
+top_lines = read_list_file(order_file)
+bottom_lines = read_list_file(bottom_file)
+
+print(f"  Top pinned (from {order_file}): {len(top_lines)} file(s)")
+print(f"  Bottom pinned (from {bottom_file}): {len(bottom_lines)} file(s)")
+
+entry_map = {fname: raw for fname, raw in entries}
+entry_map_lower = {fname.lower(): (fname, raw) for fname, raw in entries}
+
+def match_target(target):
+    if target in entry_map:
+        return (target, entry_map[target])
+    if target.lower() in entry_map_lower:
+        return entry_map_lower[target.lower()]
+    for ext in [".jpg", ".MOV", ".mov", ".mp4", ".png", ".HEIC", ".heic"]:
+        t_ext = (target + ext).lower()
+        if t_ext in entry_map_lower:
+            return entry_map_lower[t_ext]
+    return None
+
+seen = set()
+missing = []
+
+# 1. Top entries
+top_entries = []
+for target in top_lines:
+    matched = match_target(target)
+    if matched:
+        fname, raw = matched
+        if fname not in seen:
+            top_entries.append((fname, raw))
+            seen.add(fname)
+    else:
+        missing.append((order_file, target))
+
+# 2. Bottom entries
+bottom_entries = []
+bottom_seen = set()
+for target in bottom_lines:
+    matched = match_target(target)
+    if matched:
+        fname, raw = matched
+        if fname not in seen and fname not in bottom_seen:
+            bottom_entries.append((fname, raw))
+            bottom_seen.add(fname)
+    else:
+        missing.append((bottom_file, target))
+
+if missing:
+    print(f"\n  Warning: {len(missing)} filename(s) not found in {photos_file}:")
+    for src_f, m in missing:
+        print(f"    - [{src_f}] {m}")
+
+# 3. Middle entries (unlisted in order.txt or bottom.txt)
+middle_entries = []
+for fname, raw in entries:
+    if fname not in seen and fname not in bottom_seen:
+        middle_entries.append((fname, raw))
+
+print(f"  Middle items (chronological): {len(middle_entries)} file(s)")
+
+ordered_entries = top_entries + middle_entries + bottom_entries
+
+# Backup
+shutil.copyfile(photos_file, backup_file)
+
+# Write updated photos.js
+now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+header = f"""/**
+ * K2 Gallery -- Photo & Video Data
+ * Reordered by reorder.sh on {now_str}
+ *
+ * Edit the  title  and  description  fields to add captions.
+ * Re-running reorder.sh preserves your edits; running setup.sh will overwrite.
+ */
+
+const PHOTOS = [
+"""
+
+with open(photos_file, "w") as f:
+    f.write(header)
+    for new_id, (fname, raw) in enumerate(ordered_entries, 1):
+        updated_line = re.sub(r"\{\s*id:\s*\d+", f"{{ id: {new_id}", raw)
+        f.write(f"  {updated_line.strip()},\n")
+    f.write("];\n")
+
+print(f"\n  Done! {photos_file} reordered ({len(ordered_entries)} entries total).")
+print(f"  Backup saved to {backup_file}\n")
+EOF

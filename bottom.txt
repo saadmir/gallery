@@ -1,0 +1,14 @@
+# Pinned pictures and videos at the end (bottom) of the gallery
+# Add one filename per line (e.g. IMG_5702.MOV or WhatsApp Image ...jpg)
+# Lines starting with # and blank lines are ignored.
+
+
+IMG_5699.jpg
+IMG_5702.MOV
+066c1dcd-1b9d-4025-a567-fb8ff7157ddd.jpg
+WhatsApp Image 2026-08-16 at 23.54.16.jpg
+f7ec6c33-970a-4131-888e-282fd1d30d69.jpg
+IMG_9813.jpg
+WhatsApp Image 2026-08-12 at 22.36.20.jpg
+WhatsApp Image 2026-08-01 at 23.41.28.jpg
+WhatsApp Image 2026-08-15 at 08.43.28.jpg

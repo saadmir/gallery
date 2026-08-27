@@ -68,12 +68,6 @@ if [ "$total" -eq 0 ]; then
   exit 0
 fi
 
-echo ""
-echo "  K2 Gallery Setup"
-echo "  -------------------------------------------"
-echo "  Found $total file(s) in $ORIGINALS_DIR/"
-echo ""
-
 # ── Helpers ────────────────────────────────────────────────────────────────
 
 is_video() {
@@ -83,35 +77,49 @@ is_video() {
   return 1
 }
 
-make_title() {
-  local name="$1"
-  echo "$name" \
-    | sed 's/[-_]/ /g' \
-    | sed 's/[0-9]*$//' \
-    | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) tolower(substr($i,2)); print}' \
-    | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
+
+get_creation_date() {
+  local f="$1"
+  local raw=""
+
+  # 1. Spotlight metadata (macOS built-in - extracts original EXIF / QuickTime creation date in UTC)
+  if command -v mdls &>/dev/null; then
+    raw="$(mdls -name kMDItemContentCreationDate -raw "$f" 2>/dev/null || true)"
+    if [ -n "$raw" ] && [ "$raw" != "(null)" ]; then
+      # Convert UTC timestamp to Pakistan Standard Time (PKT, UTC+5)
+      TZ="Asia/Karachi" date -jf "%Y-%m-%d %H:%M:%S %z" "$raw" "+%Y-%m-%d %H:%M:%S" 2>/dev/null && return 0
+    fi
+  fi
+
+  # 2. ffprobe fallback for videos (creation_time is in UTC)
+  if command -v ffprobe &>/dev/null && is_video "$f"; then
+    raw="$(ffprobe -v quiet -print_format json -show_entries format_tags=creation_time "$f" 2>/dev/null | grep -o '"creation_time": "[^"]*"' | cut -d'"' -f4 | cut -d'.' -f1 | tr 'T' ' ' || true)"
+    if [ -n "$raw" ]; then
+      TZ="Asia/Karachi" date -jf "%Y-%m-%d %H:%M:%S %z" "$raw +0000" "+%Y-%m-%d %H:%M:%S" 2>/dev/null && return 0
+    fi
+  fi
+
+  # 3. sips fallback for images
+  if command -v sips &>/dev/null && ! is_video "$f"; then
+    raw="$(sips -g creation "$f" 2>/dev/null | awk '/creation:/ {print $2, $3}' | tr ':' '-' || true)"
+    if [ -n "$raw" ] && [ "$raw" != "<nil>" ]; then
+      echo "$raw"
+      return 0
+    fi
+  fi
+
+  # 4. Filesystem stat fallback (macOS)
+  stat -f "%Sm" -t "%Y-%m-%d %H:%M:%S" "$f" 2>/dev/null || date "+%Y-%m-%d %H:%M:%S"
 }
 
-# ── Process each file ──────────────────────────────────────────────────────
-count=0
-vid_count=0
-declare -a entries=()
-
+# ── Filter & Sort Chronologically ──────────────────────────────────────────
+file_date_pairs=()
 for orig in "${originals[@]}"; do
   filename="$(basename "$orig")"
   name="${filename%.*}"
-  count=$((count + 1))
 
-  printf "  [%3d/%d]  %-42s" "$count" "$total" "$filename"
-
-  title="$(make_title "$name")"
-
+  # Skip Live Photo companion clips (same basename as a sibling image file).
   if is_video "$orig"; then
-    # ── VIDEO ───────────────────────────────────────────────────────────
-
-    # Skip Live Photo companion clips (same basename as a sibling image file).
-    # iPhone creates e.g. IMG_1234.HEIC + IMG_1234.MOV -- the MOV is a
-    # 3-second clip, not a standalone video. We keep the HEIC, drop the MOV.
     is_live_companion=false
     for img_ext in jpg jpeg JPG JPEG heic HEIC heif HEIF png PNG tiff tif; do
       sibling="$ORIGINALS_DIR/${name}.${img_ext}"
@@ -121,18 +129,66 @@ for orig in "${originals[@]}"; do
       fi
     done
     if $is_live_companion; then
-      count=$((count - 1))   # don't add to total count
-      echo " skipped (Live Photo clip)"
       continue
     fi
+  fi
 
+  date_val="$(get_creation_date "$orig")"
+  file_date_pairs+=("${date_val}|${orig}")
+done
+
+# Sort chronologically by creation date, then filename for deterministic order
+sorted_media=()
+while IFS= read -r line; do
+  [[ -n "$line" ]] && sorted_media+=("$line")
+done < <(printf "%s\n" "${file_date_pairs[@]}" | sort -t"|" -k1,1 -k2,2)
+
+total="${#sorted_media[@]}"
+
+echo ""
+echo "  K2 Gallery Setup"
+echo "  -------------------------------------------"
+echo "  Found $total media file(s) in $ORIGINALS_DIR/ (sorted chronologically)"
+echo ""
+
+# ── Process each file ──────────────────────────────────────────────────────
+count=0
+vid_count=0
+declare -a entries=()
+
+for item in "${sorted_media[@]}"; do
+  creation_date="${item%%|*}"
+  orig="${item#*|}"
+  filename="$(basename "$orig")"
+  name="${filename%.*}"
+  count=$((count + 1))
+
+  printf "  [%3d/%d]  %-42s (%s)" "$count" "$total" "$filename" "$creation_date"
+
+  if is_video "$orig"; then
+    # ── VIDEO ───────────────────────────────────────────────────────────
     vid_count=$((vid_count + 1))
-    [ -z "$title" ] && title="Video $vid_count"
+    title="$filename"
 
-    # Copy video to display/ as-is (no re-encoding)
+    # Display copy: re-encode with ffmpeg to keep file size web/GitHub-friendly
+    # (falls back to a plain copy if ffmpeg isn't installed)
     display_out="$DISPLAY_DIR/$filename"
     if [ ! -f "$display_out" ]; then
-      cp "$orig" "$display_out"
+      if command -v ffmpeg &>/dev/null && command -v ffprobe &>/dev/null; then
+        fps=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate \
+              -of default=noprint_wrappers=1:nokey=1 "$orig" | awk -F'/' '{ if ($2==0) print 0; else print $1/$2 }')
+        rflag=()
+        if awk "BEGIN{exit !($fps > 30)}" 2>/dev/null; then
+          rflag=(-r 30)
+        fi
+        ffmpeg -nostdin -y -i "$orig" \
+          -vf "scale='if(gt(iw,ih),min(iw,1920),-2)':'if(gt(iw,ih),-2,min(ih,1920))'" \
+          "${rflag[@]+"${rflag[@]}"}" -c:v libx264 -preset veryfast -crf 26 -pix_fmt yuv420p \
+          -c:a aac -b:a 128k -movflags +faststart \
+          "$display_out" -loglevel error
+      else
+        cp "$orig" "$display_out"
+      fi
     fi
 
     # Thumbnail via qlmanage (Quick Look -- no ffmpeg needed)
@@ -157,25 +213,28 @@ for orig in "${originals[@]}"; do
       fi
     fi
 
-    entries+=("  { id: $count, src: \"$display_out\", thumb: \"$thumb_out\", title: \"$title\", description: \"\", type: \"video\" }")
+    entries+=("  { id: $count, src: \"$display_out\", thumb: \"$thumb_out\", title: \"$title\", description: \"\", date: \"$creation_date\", type: \"video\" }")
 
   else
     # ── IMAGE ───────────────────────────────────────────────────────────
-    [ -z "$title" ] && title="Photo $count"
-
     out_name="${name}.jpg"
+    title="$out_name"
     display_out="$DISPLAY_DIR/$out_name"
     thumb_out="$THUMBS_DIR/$out_name"
 
     # Display copy: convert to JPEG + resize (handles HEIC, TIFF, etc.)
-    sips -s format jpeg -s formatOptions 85 -Z "$DISPLAY_MAX" \
-         "$orig" --out "$display_out" > /dev/null 2>&1
+    if [ ! -f "$display_out" ]; then
+      sips -s format jpeg -s formatOptions 85 -Z "$DISPLAY_MAX" \
+           "$orig" --out "$display_out" > /dev/null 2>&1
+    fi
 
     # Thumbnail from display copy
-    sips -s format jpeg -s formatOptions 80 -Z "$THUMB_MAX" \
-         "$display_out" --out "$thumb_out" > /dev/null 2>&1
+    if [ ! -f "$thumb_out" ]; then
+      sips -s format jpeg -s formatOptions 80 -Z "$THUMB_MAX" \
+           "$display_out" --out "$thumb_out" > /dev/null 2>&1
+    fi
 
-    entries+=("  { id: $count, src: \"$display_out\", thumb: \"$thumb_out\", title: \"$title\", description: \"\" }")
+    entries+=("  { id: $count, src: \"$display_out\", thumb: \"$thumb_out\", title: \"$title\", description: \"\", date: \"$creation_date\" }")
   fi
 
   echo " ok"
@@ -186,6 +245,7 @@ done
   echo "/**"
   echo " * K2 Gallery -- Photo & Video Data"
   echo " * Auto-generated by setup.sh on $(date '+%Y-%m-%d %H:%M')"
+  echo " * Ordered chronologically by original metadata creation date"
   echo " *"
   echo " * Edit the  title  and  description  fields to add captions."
   echo " * Re-running setup.sh will overwrite this file."
@@ -197,6 +257,12 @@ done
   done
   echo "];"
 } > "$PHOTOS_JS"
+
+# ── Apply custom order if order.txt or bottom.txt exist ───────────────────
+if [ -f "./reorder.sh" ] && { [ -f "order.txt" ] || [ -f "bottom.txt" ]; }; then
+  chmod +x ./reorder.sh
+  ./reorder.sh > /dev/null 2>&1 || true
+fi
 
 # ── Summary ────────────────────────────────────────────────────────────────
 display_size=$(du -sh "$DISPLAY_DIR" 2>/dev/null | cut -f1)

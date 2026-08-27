@@ -1,3 +1,17 @@
+# K2 Gallery — original source photos/videos (not needed for the deployed
+# site; setup.sh regenerates images/display/ and images/thumbs/ from these)
+images/*
+!images/display/
+!images/display/**
+!images/thumbs/
+!images/thumbs/**
+
+# macOS
+.DS_Store
+
+# reorder.sh backup
+js/photos.js.bak
+
 # Logs
 logs
 *.log
