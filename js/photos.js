@@ -8,11 +8,11 @@
 
 const PHOTOS = [
   { id: 1, src: "images/display/IMG_5655.jpg", thumb: "images/thumbs/IMG_5655.jpg", title: "IMG_5655.jpg", description: "", date: "2026-08-10 06:08:31" },
-  { id: 2, src: "images/display/8c11d179-253f-4b97-92da-6342ee3149f0.jpg", thumb: "images/thumbs/8c11d179-253f-4b97-92da-6342ee3149f0.jpg", title: "8c11d179-253f-4b97-92da-6342ee3149f0.jpg", description: "", date: "2026-08-14 22:37:15" },
-  { id: 3, src: "images/display/2231d96c-4c6d-4fa1-bc4d-789d5f06f518.mp4", thumb: "images/thumbs/2231d96c-4c6d-4fa1-bc4d-789d5f06f518.jpg", title: "Gondogoro La Summit", description: "", date: "2026-08-16 00:32:56", type: "video" },
+  { id: 2, src: "images/display/8c11d179-253f-4b97-92da-6342ee3149f0.jpg", thumb: "images/thumbs/8c11d179-253f-4b97-92da-6342ee3149f0.jpg", title: "8c11d179-253f-4b97-92da-6342ee3149f0.jpg", description: "", date: "2026-08-12" },
+  { id: 3, src: "images/display/2231d96c-4c6d-4fa1-bc4d-789d5f06f518.mp4", thumb: "images/thumbs/2231d96c-4c6d-4fa1-bc4d-789d5f06f518.jpg", title: "Gondogoro La Summit", description: "", date: "2026-08-12", type: "video" },
   { id: 4, src: "images/display/IMG_5677.MOV", thumb: "images/thumbs/IMG_5677.jpg", title: "Gondogoro La Summit", description: "", date: "2026-08-12 05:45:40", type: "video" },
-  { id: 5, src: "images/display/IMG_0511.MOV", thumb: "images/thumbs/IMG_0511.jpg", title: "Ascent to Gondogoro La Summit", description: "", date: "2026-08-27 17:38:24", type: "video" },
-  { id: 6, src: "images/display/IMG_0514.MOV", thumb: "images/thumbs/IMG_0514.jpg", title: "Descent from Gondogoro La Summit", description: "", date: "2026-08-27 17:39:52", type: "video" },
+  { id: 5, src: "images/display/IMG_0511.MOV", thumb: "images/thumbs/IMG_0511.jpg", title: "Ascent to Gondogoro La Summit", description: "", date: "2026-08-12", type: "video" },
+  { id: 6, src: "images/display/IMG_0514.MOV", thumb: "images/thumbs/IMG_0514.jpg", title: "Descent from Gondogoro La Summit", description: "", date: "2026-08-12", type: "video" },
   { id: 7, src: "images/display/dji_fly_20260801_155410_0_1785582082873_quickshot_cache.mp4", thumb: "images/thumbs/dji_fly_20260801_155410_0_1785582082873_quickshot_cache.jpg", title: "Concordia Motel, Skardu, Pakistan", description: "", date: "2026-08-01 15:53:47", type: "video" },
   { id: 8, src: "images/display/IMG_5461.jpg", thumb: "images/thumbs/IMG_5461.jpg", title: "Skardu, Pakistan", description: "", date: "2026-08-01 23:46:45" },
   { id: 9, src: "images/display/IMG_5488.MOV", thumb: "images/thumbs/IMG_5488.jpg", title: "IMG_5488.MOV", description: "", date: "2026-08-02 12:19:40", type: "video" },
