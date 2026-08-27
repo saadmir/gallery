@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K2 Base Camp Expedition</title>
+  <meta name="description" content="A photographic journey to K2 Base Camp and the surrounding Karakoram, Pakistan" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Reset ───────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    /* ── Design tokens ───────────────────────────────────────────────── */
+    :root {
+      --bg:          #06090f;
+      --bg2:         #0a1020;
+      --bg3:         #101828;
+      --accent:      #5bc8ef;
+      --accent-glow: rgba(91, 200, 239, 0.18);
+      --text:        #e8f0fe;
+      --text-dim:    #7f96bb;
+      --border:      rgba(91, 200, 239, 0.12);
+      --radius:      4px;
+      --ease:        0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --font-sans:   'Montserrat', system-ui, -apple-system, sans-serif;
+      --font-serif:  'Playfair Display', Georgia, 'Times New Roman', serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    body.lightbox-open { overflow: hidden; }
+
+    /* ── Hero ────────────────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      padding: 88px 24px 72px;
+      text-align: center;
+      overflow: hidden;
+      background: linear-gradient(175deg, #0d1e3d 0%, #080e1c 55%, var(--bg) 100%);
+    }
+
+    /* Mountain silhouette */
+    .hero-mountains {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 180px;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+
+    /* Glow dot behind K2 peak */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(91,200,239,0.06) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* Bottom border glow */
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+      opacity: 0.25;
+    }
+
+    .hero-content { position: relative; z-index: 1; }
+
+    .hero-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+      opacity: 0.85;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.8rem, 8vw, 6rem);
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -1.5px;
+      line-height: 1.05;
+      margin-bottom: 14px;
+      text-shadow: 0 2px 40px rgba(91,200,239,0.12);
+    }
+
+    .hero-subtitle {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      background: var(--accent-glow);
+    }
+
+    .hero-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      opacity: 0.6;
+    }
+
+    /* ── Controls bar ────────────────────────────────────────────────── */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .controls-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-view {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--ease);
+    }
+    .btn-view svg { width: 13px; height: 13px; }
+    .btn-view:hover {
+      color: var(--text);
+      border-color: rgba(91,200,239,0.3);
+      background: rgba(91,200,239,0.06);
+    }
+    .btn-view.active {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    /* ── Photo grid ──────────────────────────────────────────────────── */
+    .grid-view {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+      padding: 3px;
+      background: #030508;
+      min-height: 60vh;
+    }
+
+    @media (max-width: 1100px) { .grid-view { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 700px)  { .grid-view { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px)  { .grid-view { grid-template-columns: 1fr; } }
+
+    /* ── Photo card ──────────────────────────────────────────────────── */
+    .photo-card {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--bg3);
+    }
+
+    .photo-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform var(--ease);
+    }
+
+    .photo-card:hover .photo-card-img { transform: scale(1.05); }
+
+    .photo-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(3,5,10,0.88) 0%, rgba(3,5,10,0.2) 50%, transparent 100%);
+      opacity: 0;
+      transition: opacity var(--ease);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 14px 12px 12px;
+    }
+    .photo-card:hover .photo-card-overlay { opacity: 1; }
+
+    .photo-card-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    .photo-card-desc {
+      font-size: 10px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Small number badge, always visible */
+    .photo-card-num {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.5px;
+      background: rgba(0,0,0,0.4);
+      padding: 2px 5px;
+      border-radius: 3px;
+      line-height: 1.4;
+    }
+
+    /* Loading skeleton pulse */
+    .photo-card-img.loading {
+      background: linear-gradient(90deg, var(--bg3) 25%, #1a2540 50%, var(--bg3) 75%);
+      background-size: 200% 100%;
+      animation: skeleton 1.4s ease infinite;
+    }
+    @keyframes skeleton {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* Video play button shown on video cards (hidden while autoplaying) */
+    .photo-card-play {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: rgba(91, 200, 239, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: transform var(--ease), background var(--ease), opacity var(--ease);
+      box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+    }
+    .photo-card-play svg { width: 18px; height: 18px; color: #fff; margin-left: 3px; }
+    .photo-card:hover .photo-card-play {
+      transform: translate(-50%, -50%) scale(1.12);
+      background: var(--accent);
+    }
+    /* Hide play button when card video is autoplaying */
+    .photo-card.is-playing .photo-card-play { opacity: 0; }
+
+    /* "VIDEO" badge — top-left corner */
+    .photo-card-video-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(91,200,239,0.35);
+      padding: 2px 6px;
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    /* Muted indicator — bottom-right, visible only while autoplaying */
+    .photo-card-muted {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.75);
+      background: rgba(0,0,0,0.55);
+      padding: 2px 6px 2px 4px;
+      border-radius: 3px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--ease);
+    }
+    .photo-card-muted svg { width: 11px; height: 11px; }
+    /* Show muted badge only while autoplaying */
+    .photo-card.is-playing .photo-card-muted { opacity: 1; }
+
+    /* Video element inside the grid card */
+    .photo-card-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Video element sizing in lightbox and slideshow */
+    video.lightbox-img {
+      background: #000;
+      object-fit: unset; /* use natural aspect ratio */
+    }
+    video.slideshow-img {
+      background: #000;
+      object-fit: unset;
+    }
+
+    /* ── Slideshow view ──────────────────────────────────────────────── */
+    .slideshow-view {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      padding: 40px 24px;
+      gap: 32px;
+    }
+
+    .slideshow-img-wrap {
+      position: relative;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    .slideshow-img {
+      width: 100%;
+      max-height: 65vh;
+      object-fit: contain;
+      display: block;
+      border-radius: var(--radius);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+    }
+
+    .slideshow-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .slideshow-info {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .slideshow-title {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .slideshow-desc {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .slideshow-counter {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+    }
+
+    /* Nav button — shared by slideshow + lightbox */
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all var(--ease);
+      flex-shrink: 0;
+    }
+    .nav-btn svg { width: 18px; height: 18px; }
+    .nav-btn:hover {
+      background: var(--accent-glow);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .nav-btn:active { transform: scale(0.94); }
+
+    /* ── Lightbox ────────────────────────────────────────────────────── */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(2, 4, 9, 0.97);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: lb-in 0.18s ease;
+    }
+    @keyframes lb-in { from { opacity: 0; } to { opacity: 1; } }
+
+    .lightbox-img-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 72px 80px 100px;
+    }
+
+    @media (max-width: 600px) { .lightbox-img-wrap { padding: 64px 56px 90px; } }
+
+    .lightbox-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--radius);
+      box-shadow: 0 32px 100px rgba(0,0,0,0.85);
+      animation: img-in 0.22s ease;
+    }
+    @keyframes img-in { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
+
+    /* Loading spinner inside lightbox */
+    .lightbox-spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(91,200,239,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Top bar */
+    .lightbox-topbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: linear-gradient(to bottom, rgba(2,4,9,0.9), transparent);
+      z-index: 10;
+    }
+
+    .lightbox-counter {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+    }
+
+    /* Progress bar */
+    .lightbox-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: var(--accent);
+      transition: width 0.2s ease;
+      opacity: 0.7;
+      z-index: 11;
+    }
+
+    .lightbox-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: var(--text-dim);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--ease);
+    }
+    .lightbox-close:hover {
+      background: rgba(255,255,255,0.14);
+      color: var(--text);
+      transform: rotate(90deg);
+    }
+
+    /* Side arrows */
+    .lightbox-prev,
+    .lightbox-next {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+    .lightbox-prev { left: 14px; }
+    .lightbox-next { right: 14px; }
+
+    /* Bottom info */
+    .lightbox-info {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      padding: 28px 24px 24px;
+      background: linear-gradient(to top, rgba(2,4,9,0.92) 60%, transparent);
+      text-align: center;
+      z-index: 10;
+    }
+
+    .lightbox-title {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      color: var(--text);
+      font-weight: 400;
+      margin-bottom: 4px;
+    }
+
+    .lightbox-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 40px 24px 36px;
+      border-top: 1px solid rgba(91,200,239,0.06);
+      margin-top: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .footer-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(127,150,187,0.4);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .footer-social {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-social a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: all var(--ease);
+    }
+    .footer-social a svg { width: 18px; height: 18px; }
+    .footer-social a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-glow);
+      transform: translateY(-2px);
+    }
+
+    /* ── Utility ─────────────────────────────────────────────────────── */
+    button { -webkit-tap-highlight-color: transparent; }
+    *:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React 18 + ReactDOM 18 (pinned) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel standalone for JSX (inline scripts only — no XHR needed) -->
+  <script src="https://unpkg.com/@babel/standalone@7.24.4/babel.min.js"></script>
+
+  <!-- Photo data — edit js/photos.js or run ./setup.sh to regenerate -->
+  <script src="js/photos.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    /* ── SVG icons ─────────────────────────────────────────────────── */
+    const IconChevronLeft = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="15 18 9 12 15 6" />
+      </svg>
+    );
+    const IconChevronRight = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 6 15 12 9 18" />
+      </svg>
+    );
+    const IconGrid = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+    );
+    const IconSlideshow = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="4" width="20" height="16" rx="2"/>
+        <path d="M10 9l5 3-5 3V9z" fill="currentColor" stroke="none"/>
+      </svg>
+    );
+    const IconPlay = () => (
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="M8 5v14l11-7z"/>
+      </svg>
+    );
+
+    /* ── Mountain silhouette SVG ───────────────────────────────────── */
+    const MountainSVG = () => (
+      <svg className="hero-mountains" viewBox="0 0 1440 180" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        {/* Far background range */}
+        <path d="M0,180 L0,120 L80,95 L160,115 L260,70 L340,100 L420,60 L500,90 L580,45 L660,80 L740,55 L800,35 L860,60 L920,30 L980,55 L1040,25 L1100,50 L1160,35 L1220,60 L1300,40 L1380,65 L1440,45 L1440,180 Z"
+              fill="rgba(13,30,58,0.5)" />
+        {/* Mid range */}
+        <path d="M0,180 L0,140 L100,115 L180,130 L280,95 L360,115 L460,80 L560,105 L640,70 L700,55 L760,75 L820,50 L880,70 L940,45 L1000,68 L1060,40 L1120,62 L1180,48 L1260,75 L1340,55 L1440,80 L1440,180 Z"
+              fill="rgba(10,22,45,0.65)" />
+        {/* Foreground hills */}
+        <path d="M0,180 L0,160 L120,140 L220,150 L340,125 L460,145 L560,130 L660,115 L760,135 L860,120 L960,140 L1060,125 L1180,145 L1300,130 L1440,150 L1440,180 Z"
+              fill="rgba(6,9,15,0.8)" />
+      </svg>
+    );
+
+    /* ── IconMuted ─────────────────────────────────────────────────── */
+    const IconMuted = () => (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+      </svg>
+    );
+
+    /* ── PhotoCard ─────────────────────────────────────────────────── */
+    function PhotoCard({ photo, index, onClick }) {
+      const [thumbLoaded, setThumbLoaded] = useState(false);
+      const [isPlaying, setIsPlaying] = useState(false);
+      const isVideo = photo.type === 'video';
+      const cardRef  = useRef(null);
+      const videoRef = useRef(null);
+
+      // Auto-play in grid via IntersectionObserver (only for video cards)
+      useEffect(() => {
+        if (!isVideo) return;
+        const card = cardRef.current;
+        if (!card) return;
+
+        const observer = new IntersectionObserver(
+          ([entry]) => {
+            const video = videoRef.current;
+            if (!video) return;
+            if (entry.isIntersecting) {
+              // Set src lazily — browser won't download until now
+              if (!video.src) video.src = photo.src;
+              video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            } else {
+              video.pause();
+              // Free memory when scrolled well off-screen
+              video.removeAttribute('src');
+              video.load();
+              setIsPlaying(false);
+            }
+          },
+          { threshold: 0.2 }
+        );
+
+        observer.observe(card);
+        return () => observer.disconnect();
+      }, [isVideo, photo.src]);
+
+      return (
+        <div
+          ref={cardRef}
+          className={`photo-card${isPlaying ? ' is-playing' : ''}`}
+          onClick={() => onClick(index)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && onClick(index)}
+          aria-label={`${isVideo ? 'Play video' : 'View photo'}: ${photo.title}`}
+        >
+          {/* Static thumbnail — always present, hidden behind video once playing */}
+          <img
+            className={`photo-card-img${thumbLoaded ? '' : ' loading'}`}
+            src={photo.thumb || photo.src}
+            alt={photo.title}
+            loading="lazy"
+            onLoad={() => setThumbLoaded(true)}
+            style={{ opacity: isPlaying ? 0 : 1, transition: 'opacity 0.4s ease' }}
+          />
+
+          {/* Autoplaying preview video (no controls, muted, looped) */}
+          {isVideo && (
+            <video
+              ref={videoRef}
+              className="photo-card-video"
+              muted
+              loop
+              playsInline
+              preload="none"
+              style={{ opacity: isPlaying ? 1 : 0, transition: 'opacity 0.4s ease' }}
+            />
+          )}
+
+          {/* Center play icon — fades out while autoplaying */}
+          {isVideo && <div className="photo-card-play"><IconPlay /></div>}
+
+          {/* "VIDEO" label — always visible */}
+          {isVideo && <span className="photo-card-video-badge">Video</span>}
+
+          {/* Muted badge — appears while autoplaying */}
+          {isVideo && (
+            <span className="photo-card-muted">
+              <IconMuted /> muted
+            </span>
+          )}
+
+          <div className="photo-card-overlay">
+            <span className="photo-card-title">{photo.title}</span>
+            {photo.description && <span className="photo-card-desc">{photo.description}</span>}
+          </div>
+          <span className="photo-card-num">{index + 1}</span>
+        </div>
+      );
+    }
+
+    /* ── GridView ──────────────────────────────────────────────────── */
+    function GridView({ photos, onPhotoClick }) {
+      return (
+        <main className="grid-view" aria-label="Photo gallery">
+          {photos.map((photo, i) => (
+            <PhotoCard key={photo.id} photo={photo} index={i} onClick={onPhotoClick} />
+          ))}
+        </main>
+      );
+    }
+
+    /* ── SlideshowView ─────────────────────────────────────────────── */
+    function SlideshowView({ photos, onOpenLightbox }) {
+      const [idx, setIdx] = useState(0);
+      const [loaded, setLoaded] = useState(false);
+      const videoRef = useRef(null);
+      const photo = photos[idx];
+      const isVideo = photo.type === 'video';
+
+      const prev = () => { videoRef.current?.pause(); setLoaded(false); setIdx(i => (i - 1 + photos.length) % photos.length); };
+      const next = () => { videoRef.current?.pause(); setLoaded(false); setIdx(i => (i + 1) % photos.length); };
+
+      useEffect(() => {
+        const handler = e => {
+          if (e.key === 'ArrowLeft') prev();
+          if (e.key === 'ArrowRight') next();
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+      }, []);
+
+      return (
+        <main className="slideshow-view" aria-label="Slideshow">
+          <div className="slideshow-img-wrap">
+            {isVideo ? (
+              <video
+                key={photo.id}
+                ref={videoRef}
+                className="slideshow-img"
+                src={photo.src}
+                controls
+                autoPlay
+                muted
+                playsInline
+                onLoadedData={() => setLoaded(true)}
+                style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+              />
+            ) : (
+              <img
+                key={photo.id}
+                className="slideshow-img"
+                src={photo.src}
+                alt={photo.title}
+                onLoad={() => setLoaded(true)}
+                style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease' }}
+              />
+            )}
+          </div>
+
+          <div className="slideshow-info">
+            <h2 className="slideshow-title">{photo.title}</h2>
+            {photo.description && <p className="slideshow-desc">{photo.description}</p>}
+            <p className="slideshow-counter">{idx + 1} / {photos.length}</p>
+          </div>
+
+          <nav className="slideshow-nav" aria-label="Photo navigation">
+            <button className="nav-btn" onClick={prev} aria-label="Previous">
+              <IconChevronLeft />
+            </button>
+            <button className="nav-btn" onClick={() => onOpenLightbox(idx)} aria-label="View fullscreen"
+                    title="Open fullscreen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width:18,height:18}}>
+                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+              </svg>
+            </button>
+            <button className="nav-btn" onClick={next} aria-label="Next">
+              <IconChevronRight />
+            </button>
+          </nav>
+        </main>
+      );
+    }
+
+    /* ── Lightbox ──────────────────────────────────────────────────── */
+    function Lightbox({ photos, index, onClose, onPrev, onNext }) {
+      const photo = photos[index];
+      const isVideo = photo.type === 'video';
+      const [mediaLoaded, setMediaLoaded] = useState(false);
+      const touchStartX = useRef(null);
+      const videoRef = useRef(null);
+
+      // Reset load state whenever the item changes
+      useEffect(() => { setMediaLoaded(false); }, [index]);
+
+      // Pause any playing video before moving to the next item
+      useEffect(() => {
+        return () => { videoRef.current?.pause(); };
+      }, [index]);
+
+      // Swipe support
+      const handleTouchStart = e => { touchStartX.current = e.touches[0].clientX; };
+      const handleTouchEnd = e => {
+        if (touchStartX.current === null) return;
+        const dx = e.changedTouches[0].clientX - touchStartX.current;
+        if (Math.abs(dx) > 50) dx < 0 ? onNext() : onPrev();
+        touchStartX.current = null;
+      };
+
+      const progress = `${((index + 1) / photos.length) * 100}%`;
+
+      return (
+        <div className="lightbox" role="dialog" aria-modal="true"
+             aria-label={isVideo ? 'Video viewer' : 'Photo viewer'}
+             onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+
+          {/* Progress bar */}
+          <div className="lightbox-progress" style={{ width: progress }} />
+
+          {/* Top bar */}
+          <div className="lightbox-topbar">
+            <span className="lightbox-counter">
+              {index + 1}&nbsp;/&nbsp;{photos.length}
+              {isVideo && <span style={{marginLeft:10,fontSize:9,letterSpacing:1.5,color:'var(--accent)',fontWeight:700}}>VIDEO</span>}
+            </span>
+            <button className="lightbox-close" onClick={onClose} aria-label="Close">✕</button>
+          </div>
+
+          {/* Media */}
+          <div className="lightbox-img-wrap" onClick={onClose}>
+            {!mediaLoaded && <div className="lightbox-spinner" />}
+            {isVideo ? (
+              <video
+                key={photo.id}
+                ref={videoRef}
+                className="lightbox-img"
+                src={photo.src}
+                controls
+                autoPlay
+                muted
+                playsInline
+                onClick={e => e.stopPropagation()}
+                onLoadedData={() => setMediaLoaded(true)}
+                style={{ display: mediaLoaded ? 'block' : 'none' }}
+              />
+            ) : (
+              <img
+                key={photo.id}
+                className="lightbox-img"
+                src={photo.src}
+                alt={photo.title}
+                onClick={e => e.stopPropagation()}
+                onLoad={() => setMediaLoaded(true)}
+                style={{ display: mediaLoaded ? 'block' : 'none' }}
+              />
+            )}
+          </div>
+
+          {/* Prev / Next arrows */}
+          <button className="nav-btn lightbox-prev" onClick={onPrev} aria-label="Previous">
+            <IconChevronLeft />
+          </button>
+          <button className="nav-btn lightbox-next" onClick={onNext} aria-label="Next">
+            <IconChevronRight />
+          </button>
+
+          {/* Info bar */}
+          <div className="lightbox-info" onClick={e => e.stopPropagation()}>
+            {photo.title && <h3 className="lightbox-title">{photo.title}</h3>}
+            {photo.description && <p className="lightbox-desc">{photo.description}</p>}
+          </div>
+        </div>
+      );
+    }
+
+    /* ── App (root) ────────────────────────────────────────────────── */
+    function App() {
+      const [view, setView] = useState('grid');           // 'grid' | 'slideshow'
+      const [lightboxIdx, setLightboxIdx] = useState(null);
+
+      const videoCount = PHOTOS.filter(p => p.type === 'video').length;
+      const photoCount = PHOTOS.length - videoCount;
+      const mediaLabel = videoCount > 0
+        ? `${photoCount} Photo${photoCount !== 1 ? 's' : ''} · ${videoCount} Video${videoCount !== 1 ? 's' : ''}`
+        : `${PHOTOS.length} Photographs`;
+
+      const lightboxIdxRef = useRef(lightboxIdx);
+      lightboxIdxRef.current = lightboxIdx;
+
+      const openLightbox  = useCallback(i => setLightboxIdx(i), []);
+      const closeLightbox = useCallback(()  => setLightboxIdx(null), []);
+      const goPrev = useCallback(() =>
+        setLightboxIdx(i => (i - 1 + PHOTOS.length) % PHOTOS.length), []);
+      const goNext = useCallback(() =>
+        setLightboxIdx(i => (i + 1) % PHOTOS.length), []);
+
+      // Keyboard nav (lightbox only)
+      useEffect(() => {
+        const handler = e => {
+          if (lightboxIdxRef.current === null) return;
+          if (e.key === 'ArrowLeft')  goPrev();
+          if (e.key === 'ArrowRight') goNext();
+          if (e.key === 'Escape')     closeLightbox();
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+      }, [goPrev, goNext, closeLightbox]);
+
+      // Body scroll lock
+      useEffect(() => {
+        document.body.classList.toggle('lightbox-open', lightboxIdx !== null);
+      }, [lightboxIdx]);
+
+      return (
+        <div className="app">
+
+          {/* ── Hero ── */}
+          <header className="hero">
+            <div className="hero-content">
+              <p className="hero-eyebrow">Pakistan · Karakoram · 8,611 m</p>
+              <h1 className="hero-title">K2 Expedition</h1>
+              <p className="hero-subtitle">Base Camp &amp; Surrounding Region</p>
+              <div className="hero-meta">
+                <span className="hero-badge">{mediaLabel}</span>
+                <span className="hero-hint">Click any photo to enlarge · ← → to navigate</span>
+              </div>
+            </div>
+            <MountainSVG />
+          </header>
+
+          {/* ── Controls bar ── */}
+          <div className="controls-bar">
+            <span className="controls-count">{PHOTOS.length} {videoCount > 0 ? 'items' : 'photos'}</span>
+            <div className="controls-right">
+              <button
+                className={`btn-view${view === 'grid' ? ' active' : ''}`}
+                onClick={() => setView('grid')}
+                aria-pressed={view === 'grid'}
+              >
+                <IconGrid /> Grid
+              </button>
+              <button
+                className={`btn-view${view === 'slideshow' ? ' active' : ''}`}
+                onClick={() => setView('slideshow')}
+                aria-pressed={view === 'slideshow'}
+              >
+                <IconSlideshow /> Slideshow
+              </button>
+            </div>
+          </div>
+
+          {/* ── Main content ── */}
+          {view === 'grid'
+            ? <GridView photos={PHOTOS} onPhotoClick={openLightbox} />
+            : <SlideshowView photos={PHOTOS} onOpenLightbox={openLightbox} />
+          }
+
+          {/* ── Lightbox ── */}
+          {lightboxIdx !== null && (
+            <Lightbox
+              photos={PHOTOS}
+              index={lightboxIdx}
+              onClose={closeLightbox}
+              onPrev={goPrev}
+              onNext={goNext}
+            />
+          )}
+
+          <footer className="footer">
+            <span className="footer-title">K2 Base Camp Expedition</span>
+            <div className="footer-social">
+              {/* ── Facebook ── */}
+              <a href="https://facebook.com/YOUR_USERNAME" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+                </svg>
+              </a>
+              {/* ── Instagram ── */}
+              <a href="https://instagram.com/YOUR_USERNAME" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+                </svg>
+              </a>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
